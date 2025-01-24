@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Packages</title>
+    <link rel="stylesheet" href="{% static 'frontend/css/styles.css' %}">
+</head>
+
+<body>
+    <h1>Welcome to Travel Agency</h1>
+    <p>Explore our exclusive travel packages:</p>
+    <!-- Chatbot button -->
+    <button onclick="openChatbot()">Assistant Chatbot</button>
+
+    <script>
+        function openChatbot() {
+            window.location.href = "{% url 'chatbot' %}";
+        }
+    </script>
+
+    <ul class="packages-list">
+        {% for package in packages %}
+        <li>
+            <h2>{{ package.name }}</h2>
+            <p>{{ package.description }}</p>
+            <p>Price: ${{ package.price }}</p>
+            <a href="{% url 'package_detail' package.id %}">View Details</a>
+            <a href="{% url 'book_package' package.id %}">Book Now</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="recommendations">
+        <h3>Recommended for You</h3>
+        <ul>
+            {% for package in recommendations %}
+            <li>
+                <h4>{{ package.name }}</h4>
+                <p>{{ package.description }}</p>
+                <p>Price: ${{ package.price }}</p>
+                <p>Themes: {{ package.get_themes|join:", " }}</p>
+                <a href="{% url 'package_detail' package.id %}">View Details</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+
+</html>

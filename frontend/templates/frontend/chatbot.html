@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #chat-container {
+            width: 400px;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+
+        #messages {
+            height: 300px;
+            overflow-y: scroll;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #fff;
+        }
+
+        .message {
+            margin-bottom: 10px;
+        }
+
+        .user {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .bot {
+            font-weight: bold;
+            color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <h1>Assistant Chatbot</h1>
+        <div id="messages"></div>
+        <textarea id="user-input" rows="2" placeholder="Type your message here"></textarea>
+        <button id="send-btn">Send</button>
+    </div>
+
+    <script>
+        const sendBtn = document.getElementById('send-btn');
+        const userInput = document.getElementById('user-input');
+        const messagesDiv = document.getElementById('messages');
+
+        function appendMessage(content, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.innerHTML = `<span class="${sender}">${sender === 'user' ? 'You' : 'Bot'}:</span> ${content}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        sendBtn.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            appendMessage(message, 'user');
+            userInput.value = '';
+
+            fetch("{% url 'chatbot_response' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.reply) {
+                    appendMessage(data.reply, 'bot');
+                } else if (data.error) {
+                    appendMessage("Error: " + data.error, 'bot');
+                }
+            })
+            .catch(err => {
+                appendMessage("Error: Could not connect to the server.", 'bot');
+            });
+        });
+    </script>
+</body>
+</html>

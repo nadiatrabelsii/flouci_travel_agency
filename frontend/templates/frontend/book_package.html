@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Package</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'frontend/css/styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Book {{ package.name }}</h1>
+        <p>{{ package.description }}</p>
+        <p>Price: ${{ package.price }}</p>
+
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <label for="email">Enter Your Email:</label>
+            <input type="email" id="email" name="email" placeholder="your-email@example.com" required>
+            <button type="submit">Confirm Booking</button>
+        </form>
+
+        <a href="/">Back to Homepage</a>
+    </div>
+</body>
+</html>

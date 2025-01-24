@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmation</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'frontend/css/styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Thank You for Booking!</h1>
+        <p>We are excited to confirm your booking for the following package:</p>
+        <ul>
+            <li><strong>Package Name:</strong> {{ package_name }}</li>
+            <li><strong>Price:</strong> ${{ package_price }}</li>
+        </ul>
+        <p>We look forward to serving you on your journey.</p>
+        <p>Best Regards,<br>Travel Agency Team</p>
+    </div>
+</body>
+</html>

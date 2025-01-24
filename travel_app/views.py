@@ -1,37 +1,106 @@
-from rest_framework import viewsets
-from django.contrib.auth.models import User
-from .models import Package, Booking
-from .serializers import UserSerializer, PackageSerializer, BookingSerializer
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from .tasks import send_booking_confirmation_email, generate_pdf_invoice
+from django.shortcuts import render, get_object_or_404, redirect
+from travel_app.models import TravelPackage, UserActivity, TravelNews
+from frontend.tasks import send_booking_email  
+from .recommendations import calculate_recommendations, calculate_recommendations
+from django.http import JsonResponse
 
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+def homepage(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        import uuid
+        user_id = str(uuid.uuid4())
+        request.session['user_id'] = user_id
 
-class PackageViewSet(viewsets.ModelViewSet):
-    queryset = Package.objects.all()
-    serializer_class = PackageSerializer
+    UserActivity.objects.create(
+        user_id=user_id,
+        action="opened_homepage",
+        details="User visited homepage."
+    )
 
-class BookingViewSet(viewsets.ModelViewSet):
-    queryset = Booking.objects.all()
-    serializer_class = BookingSerializer
+    packages = TravelPackage.objects.all()
+    recommendations = calculate_recommendations(user_id)
 
-    @action(detail=True, methods=['post'])
-    def confirm(self, request, pk=None):
-        """
-        Custom action to confirm a booking, triggers email and PDF tasks.
-        """
-        booking = self.get_object()
-        booking.status = 'confirmed'
-        booking.save()
+    return render(request, 'frontend/homepage.html', {
+        'packages': packages,
+        'recommendations': recommendations,
+    })
 
-        # Trigger Celery tasks
-        send_booking_confirmation_email.delay(
-            to_email=booking.user.email,
-            booking_details=str(booking.id)
+
+def api_recommendations(request, user_id):
+    recommendations = calculate_recommendations(user_id)
+    return JsonResponse({
+        'recommendations': [
+            {
+                'id': pkg.id,
+                'name': pkg.name,
+                'description': pkg.description,
+                'price': float(pkg.price),
+                'themes': pkg.get_themes(),
+            }
+            for pkg in recommendations
+        ]
+    })
+
+
+def package_detail(request, package_id):
+    package = get_object_or_404(TravelPackage, id=package_id)
+    user_id = request.session.get('user_id')
+
+    UserActivity.objects.create(
+        user_id=user_id,
+        action="viewed_package",
+        details=str(package_id)
+    )
+
+    recommendations = calculate_recommendations(user_id)
+
+    return render(request, 'frontend/package_detail.html', {
+        'package': package,
+        'recommendations': recommendations,
+    })
+
+def book_package(request, package_id):
+    package = get_object_or_404(TravelPackage, id=package_id)
+
+    if request.method == 'POST':
+        email = request.POST.get('email')  
+
+        if not email:  
+            return render(request, 'frontend/book_package.html', {
+                'package': package,
+                'error': 'Please provide a valid email address.',
+            })
+
+        send_booking_email.delay(email, package.name, package.price)
+
+        return render(request, 'frontend/booking_success.html', {
+            'package': package,
+            'email': email,
+        })
+
+    return render(request, 'frontend/book_package.html', {'package': package})
+
+def submit_feedback(request, package_id):
+    if request.method == 'POST':
+        feedback = float(request.POST.get('feedback'))
+        user_id = request.session.get('user_id')
+
+        # Log feedback
+        UserActivity.objects.create(
+            user_id=user_id,
+            action="viewed_package",
+            details=str(package_id),
+            feedback_score=feedback
         )
-        generate_pdf_invoice.delay(booking.id)
 
-        return Response({'status': 'Booking confirmed, tasks scheduled.'})
+        recommendations = calculate_recommendations(user_id)
+
+    return redirect('package_detail', package_id=package_id)
+
+def booking_success(request):
+    return render(request, 'frontend/booking_success.html')
+
+
+def news_page(request):
+    news = TravelNews.objects.order_by("-published_date")[:20]  
+    return render(request, "frontend/news.html", {"news": news})

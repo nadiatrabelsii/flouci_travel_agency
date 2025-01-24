@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Package Details</title>
+    <link rel="stylesheet" href="{% static 'frontend/css/styles.css' %}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>{{ package.name }}</h1>
+        <p>{{ package.description }}</p>
+        <p>Price: ${{ package.price }}</p>
+        <a class="button" href="{% url 'book_package' package.id %}">Book Now</a>
+
+        <div class="recommendations">
+            <h3>Recommended for You</h3>
+            <ul>
+                {% for recommendation in recommendations %}
+                <li>
+                    <h4>{{ recommendation.name }}</h4>
+                    <p>{{ recommendation.description }}</p>
+                    <p>Price: ${{ recommendation.price }}</p>
+                    <p>Themes: {{ recommendation.get_themes|join:", " }}</p>
+                    <a href="{% url 'package_detail' recommendation.id %}">View Details</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="feedback-form">
+            <h2>Provide Your Feedback</h2>
+            <form method="POST" action="{% url 'submit_feedback' package.id %}">
+                {% csrf_token %}
+                <label for="feedback">Rate this package (1-5):</label>
+                <input type="number" name="feedback" id="feedback" min="1" max="5" required>
+                <button type="submit">Submit Feedback</button>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>

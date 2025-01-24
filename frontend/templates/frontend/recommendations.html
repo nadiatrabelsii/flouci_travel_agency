@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalized Recommendations</title>
+    <link rel="stylesheet" href="{% static 'frontend/css/styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Your Personalized Recommendations</h1>
+        <ul class="recommendations-list">
+            {% for recommendation in recommendations %}
+            <li class="recommendation-card">
+                <h2>{{ recommendation.name }}</h2>
+                <p>{{ recommendation.description }}</p>
+                <p class="price">Price: ${{ recommendation.price }}</p>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
